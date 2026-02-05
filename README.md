@@ -33,7 +33,7 @@ project/
 │   ├── __init__.py
 │   ├── file_handlers.py   # File processing
 │   └── ui_helpers.py      # UI components
-├── final.py              # Main Streamlit application
+├── app.py              # Main Streamlit application
 ├── Courses.py            # Course recommendations data
 ├── skills.py             # Skills database
 ├── requirements.txt      # Python dependencies
@@ -108,7 +108,7 @@ copy .env.example .env
 ### 5. Run the Application
 
 ```bash
-streamlit run final.py
+streamlit run app.py
 ```
 
 The app will open in your browser at `http://localhost:8501`
