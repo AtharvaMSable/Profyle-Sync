@@ -49,7 +49,7 @@ except ImportError:
 def download_nltk_data():
     try:
         nltk.data.find('corpora/stopwords')
-    except nltk.downloader.DownloadError:
+    except LookupError:
         nltk.download('stopwords')
 
 download_nltk_data()
