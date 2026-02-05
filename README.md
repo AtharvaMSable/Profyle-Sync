@@ -73,7 +73,7 @@ project/
 
 ```bash
 # Clone/download the project
-cd "d:\6th Semester\Project"
+cd "\Project"
 
 # Create virtual environment (recommended)
 python -m venv venv
@@ -272,23 +272,8 @@ python -m spacy download en_core_web_sm
 pip install -r requirements.txt --upgrade
 ```
 
-## 📝 License
-
-This project is for educational purposes.
-
-## 👥 Contributors
-
-- Your Name
-
-## 🙏 Acknowledgments
-
-- Supabase for the excellent database platform
-- Streamlit for the amazing UI framework
-- Hugging Face for transformer models
-- spaCy for NLP capabilities
+ 
 
 ---
 
-**Built with ❤️ using Python and Supabase**
-
-For questions or issues, please check the troubleshooting section or create an issue.
+ 
