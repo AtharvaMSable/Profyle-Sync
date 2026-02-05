@@ -115,6 +115,8 @@ if ml_service.is_loaded():
     st.sidebar.success("✅ ML Models Loaded")
 else:
     st.sidebar.error("❌ ML Models Not Loaded")
+    if ml_service.load_error:
+        st.sidebar.caption(f"Error: {ml_service.load_error}")
 
 if spacy_loaded:
     st.sidebar.success("✅ spaCy NER Loaded")
