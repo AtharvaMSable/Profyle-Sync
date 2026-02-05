@@ -27,6 +27,13 @@ class MLCategorizationService:
         try:
             import numpy as np
             import sys
+            import os
+            
+            # Check if files exist
+            if not os.path.exists(TFIDF_MODEL_PATH):
+                raise FileNotFoundError(f"TF-IDF model not found at {TFIDF_MODEL_PATH}")
+            if not os.path.exists(ML_MODEL_PATH):
+                raise FileNotFoundError(f"ML model not found at {ML_MODEL_PATH}")
             
             # Map numpy._core to numpy.core for backward compatibility
             if 'numpy._core' not in sys.modules:
@@ -40,10 +47,14 @@ class MLCategorizationService:
             with open(ML_MODEL_PATH, "rb") as f:
                 self.model = pickle.load(f, encoding='latin1')
             
+            # Verify models are fitted
+            if not hasattr(self.vectorizer, 'idf_'):
+                raise ValueError("TF-IDF vectorizer is not fitted")
+            
             self.loaded = True
             logger.info("ML models loaded successfully")
         except FileNotFoundError as e:
-            self.load_error = f"Model files not found: {e}"
+            self.load_error = f"Model files not found: {e}. Please ensure tfidf.pkl and model.pkl are in the project root."
             logger.error(self.load_error)
         except Exception as e:
             self.load_error = f"Error loading models: {e}"
