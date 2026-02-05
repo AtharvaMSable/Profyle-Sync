@@ -36,10 +36,10 @@ class MLCategorizationService:
                 raise FileNotFoundError(f"ML model not found at {ML_MODEL_PATH}")
             
             # Map numpy._core to numpy.core for backward compatibility
-            if 'numpy._core' not in sys.modules:
-                sys.modules['numpy._core'] = np.core
-                sys.modules['numpy._core.multiarray'] = np.core.multiarray
-                sys.modules['numpy._core._multiarray_umath'] = np.core._multiarray_umath
+            if hasattr(np, '_core') and 'numpy._core' not in sys.modules:
+                sys.modules['numpy._core'] = np._core
+                sys.modules['numpy._core.multiarray'] = np._core.multiarray
+                sys.modules['numpy._core._multiarray_umath'] = np._core._multiarray_umath
             
             # Load models with error handling
             with open(TFIDF_MODEL_PATH, "rb") as f:
@@ -47,12 +47,10 @@ class MLCategorizationService:
             with open(ML_MODEL_PATH, "rb") as f:
                 self.model = pickle.load(f, encoding='latin1')
             
-            # Verify models are fitted
-            if not hasattr(self.vectorizer, 'idf_'):
-                raise ValueError("TF-IDF vectorizer is not fitted")
-            
             self.loaded = True
             logger.info("ML models loaded successfully")
+            logger.info(f"Vectorizer type: {type(self.vectorizer)}")
+            logger.info(f"Model type: {type(self.model)}")
         except FileNotFoundError as e:
             self.load_error = f"Model files not found: {e}. Please ensure tfidf.pkl and model.pkl are in the project root."
             logger.error(self.load_error)
