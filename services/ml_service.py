@@ -47,6 +47,17 @@ class MLCategorizationService:
             with open(ML_MODEL_PATH, "rb") as f:
                 self.model = pickle.load(f, encoding='latin1')
             
+            # Try to fix unfitted vectorizer issue
+            if hasattr(self.vectorizer, 'idf_') and hasattr(self.vectorizer, 'vocabulary_'):
+                # Manually reconstruct _tfidf transformer if missing
+                if not hasattr(self.vectorizer, '_tfidf') or self.vectorizer._tfidf is None:
+                    from sklearn.feature_extraction.text import TfidfTransformer
+                    self.vectorizer._tfidf = TfidfTransformer()
+                    # Copy fitted attributes
+                    if hasattr(self.vectorizer, 'idf_'):
+                        self.vectorizer._tfidf.idf_ = self.vectorizer.idf_
+                    logger.info("Reconstructed _tfidf transformer")
+            
             # Log model details
             logger.info("ML models loaded successfully")
             logger.info(f"Vectorizer type: {type(self.vectorizer)}")
