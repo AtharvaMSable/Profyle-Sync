@@ -101,12 +101,19 @@ class MLCategorizationService:
             # Transform and predict
             import numpy as np
             try:
+                # Check if vectorizer is actually fitted
+                if not hasattr(self.vectorizer, 'vocabulary_'):
+                    logger.error("Vectorizer not properly fitted - missing vocabulary_")
+                    return "Model Error", None, 0.0
+                
                 features = self.vectorizer.transform([cleaned_text])
                 logger.info("Text transformation successful")
             except Exception as transform_error:
                 logger.error(f"Transform failed: {transform_error}")
-                logger.error(f"Vectorizer attributes: {dir(self.vectorizer)}")
-                raise
+                logger.error(f"Vectorizer type: {type(self.vectorizer)}")
+                logger.error(f"Has idf_: {hasattr(self.vectorizer, 'idf_')}")
+                logger.error(f"Has vocabulary_: {hasattr(self.vectorizer, 'vocabulary_')}")
+                return "Model Error", None, 0.0
             
             prediction_id = self.model.predict(features)[0]
             

@@ -570,7 +570,11 @@ elif app_mode == '🔑 Admin Panel':
     st.markdown("---")
     
     # Statistics
-    stats = db_manager.get_statistics()
+    try:
+        stats = db_manager.get_statistics()
+    except Exception as e:
+        st.error(f"Error loading statistics: {e}")
+        stats = {}
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -596,7 +600,11 @@ elif app_mode == '🔑 Admin Panel':
     st.markdown("---")
     st.subheader("📋 All Resumes")
     
-    resumes = db_manager.get_all_resumes(limit=100)
+    try:
+        resumes = db_manager.get_all_resumes(limit=100)
+    except Exception as e:
+        st.error(f"Error loading resumes: {e}")
+        resumes = []
     
     if resumes:
         # Convert to DataFrame
