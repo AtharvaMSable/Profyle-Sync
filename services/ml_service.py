@@ -47,10 +47,20 @@ class MLCategorizationService:
             with open(ML_MODEL_PATH, "rb") as f:
                 self.model = pickle.load(f, encoding='latin1')
             
-            self.loaded = True
+            # Log model details
             logger.info("ML models loaded successfully")
             logger.info(f"Vectorizer type: {type(self.vectorizer)}")
             logger.info(f"Model type: {type(self.model)}")
+            
+            # Check vectorizer attributes
+            if hasattr(self.vectorizer, 'vocabulary_'):
+                logger.info(f"Vectorizer vocabulary size: {len(self.vectorizer.vocabulary_)}")
+            if hasattr(self.vectorizer, 'idf_'):
+                logger.info(f"Vectorizer has idf_ attribute: True")
+            else:
+                logger.warning("Vectorizer missing idf_ attribute - may not be fitted")
+            
+            self.loaded = True
         except FileNotFoundError as e:
             self.load_error = f"Model files not found: {e}. Please ensure tfidf.pkl and model.pkl are in the project root."
             logger.error(self.load_error)
@@ -73,8 +83,8 @@ class MLCategorizationService:
             Tuple of (category_name, category_id, confidence_score)
         """
         if not self.loaded:
-            logger.error("Models not loaded")
-            return None, None, None
+            logger.error(f"Models not loaded. Error: {self.load_error}")
+            return "Unknown", None, 0.0
         
         try:
             # Clean text
@@ -84,9 +94,20 @@ class MLCategorizationService:
                 logger.warning("Cleaned text is empty")
                 return "Unknown", None, 0.0
             
+            # Log for debugging
+            logger.info(f"Attempting prediction with vectorizer type: {type(self.vectorizer)}")
+            logger.info(f"Model type: {type(self.model)}")
+            
             # Transform and predict
             import numpy as np
-            features = self.vectorizer.transform([cleaned_text])
+            try:
+                features = self.vectorizer.transform([cleaned_text])
+                logger.info("Text transformation successful")
+            except Exception as transform_error:
+                logger.error(f"Transform failed: {transform_error}")
+                logger.error(f"Vectorizer attributes: {dir(self.vectorizer)}")
+                raise
+            
             prediction_id = self.model.predict(features)[0]
             
             # Handle numpy types
