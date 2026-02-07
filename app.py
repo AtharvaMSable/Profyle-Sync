@@ -142,7 +142,7 @@ if 'analysis_output' not in st.session_state:
 st.sidebar.title("📌 Navigation")
 app_mode = st.sidebar.selectbox(
     "Choose Mode:",
-    ["🏠 Home", "👤 User Analysis", " Admin Panel"]
+    ["🏠 Home", "👤 User Analysis", "🔑 Admin Panel"]
 )
 
 # --- Course Recommendation Function ---
@@ -542,29 +542,42 @@ elif app_mode == '👤 User Analysis':
 # ===================================
 elif app_mode == '🔑 Admin Panel':
     st.title("🔑 Admin Panel")
-    st.markdown("View analytics and manage resume data")
-    st.markdown("---")
     
     # Simple login
     if 'admin_logged_in' not in st.session_state:
         st.session_state['admin_logged_in'] = False
     
     if not st.session_state['admin_logged_in']:
-        username = st.text_input("Username", key="admin_user")
-        password = st.text_input("Password", type='password', key="admin_pass")
+        st.markdown("### Login Required")
+        st.info("Please enter admin credentials to access the panel")
         
-        if st.button('Login', key="admin_login"):
-            if username == 'admin' and password == 'admin123':
-                st.session_state['admin_logged_in'] = True
-                st.success("✅ Login successful!")
-                st.rerun()
-            else:
-                st.error("❌ Invalid credentials")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            username = st.text_input("Username", key="admin_user", placeholder="admin")
+            password = st.text_input("Password", type='password', key="admin_pass", placeholder="admin123")
+            
+            if st.button('🔐 Login', key="admin_login", use_container_width=True):
+                if username == 'admin' and password == 'admin123':
+                    st.session_state['admin_logged_in'] = True
+                    st.success("✅ Login successful!")
+                    st.rerun()
+                else:
+                    st.error("❌ Invalid credentials")
         st.stop()
     
     # Admin is logged in
+    st.markdown("View analytics and manage resume data")
+    
+    # Logout button
+    if st.sidebar.button("🚪 Logout", key="admin_logout"):
+        st.session_state['admin_logged_in'] = False
+        st.rerun()
+    
+    st.markdown("---")
+    
     if not db_manager.is_connected:
         st.error("Database not connected. Cannot display data.")
+        st.info("Please check your Supabase credentials in the configuration.")
         st.stop()
     
     st.markdown("---")
