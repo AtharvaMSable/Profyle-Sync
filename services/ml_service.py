@@ -43,33 +43,50 @@ class MLCategorizationService:
             
             # Load models with error handling
             with open(TFIDF_MODEL_PATH, "rb") as f:
-                self.vectorizer = pickle.load(f, encoding='latin1')
+                self.vectorizer = pickle.load(f)
             with open(ML_MODEL_PATH, "rb") as f:
-                self.model = pickle.load(f, encoding='latin1')
-            
-            # Try to fix unfitted vectorizer issue
-            if hasattr(self.vectorizer, 'idf_') and hasattr(self.vectorizer, 'vocabulary_'):
-                # Manually reconstruct _tfidf transformer if missing
-                if not hasattr(self.vectorizer, '_tfidf') or self.vectorizer._tfidf is None:
-                    from sklearn.feature_extraction.text import TfidfTransformer
-                    self.vectorizer._tfidf = TfidfTransformer()
-                    # Copy fitted attributes
-                    if hasattr(self.vectorizer, 'idf_'):
-                        self.vectorizer._tfidf.idf_ = self.vectorizer.idf_
-                    logger.info("Reconstructed _tfidf transformer")
+                self.model = pickle.load(f)
             
             # Log model details
             logger.info("ML models loaded successfully")
             logger.info(f"Vectorizer type: {type(self.vectorizer)}")
             logger.info(f"Model type: {type(self.model)}")
             
-            # Check vectorizer attributes
-            if hasattr(self.vectorizer, 'vocabulary_'):
-                logger.info(f"Vectorizer vocabulary size: {len(self.vectorizer.vocabulary_)}")
-            if hasattr(self.vectorizer, 'idf_'):
-                logger.info(f"Vectorizer has idf_ attribute: True")
-            else:
-                logger.warning("Vectorizer missing idf_ attribute - may not be fitted")
+            # Check and fix vectorizer attributes
+            has_vocabulary = hasattr(self.vectorizer, 'vocabulary_') and self.vectorizer.vocabulary_
+            has_idf = hasattr(self.vectorizer, 'idf_') and self.vectorizer.idf_ is not None
+            
+            logger.info(f"Has vocabulary_: {has_vocabulary}")
+            logger.info(f"Has idf_: {has_idf}")
+            
+            if has_vocabulary:
+                logger.info(f"Vocabulary size: {len(self.vectorizer.vocabulary_)}")
+            
+            # If vocabulary exists but idf_ doesn't, try to fix the vectorizer
+            if has_vocabulary and not has_idf:
+                logger.warning("Vectorizer has vocabulary but missing idf_ - attempting to fix")
+                try:
+                    from sklearn.feature_extraction.text import TfidfTransformer
+                    from sklearn.utils.validation import check_is_fitted
+                    
+                    # Try to get idf_ from _tfidf attribute if it exists
+                    if hasattr(self.vectorizer, '_tfidf') and hasattr(self.vectorizer._tfidf, 'idf_'):
+                        self.vectorizer.idf_ = self.vectorizer._tfidf.idf_
+                        logger.info("Copied idf_ from _tfidf transformer")
+                        has_idf = True
+                    
+                    # Verify it's now fitted
+                    if has_idf:
+                        try:
+                            check_is_fitted(self.vectorizer)
+                            logger.info("Vectorizer is now properly fitted")
+                        except:
+                            logger.warning("Vectorizer still not fitted after fix attempt")
+                except Exception as fix_error:
+                    logger.error(f"Failed to fix vectorizer: {fix_error}")
+            
+            if not has_vocabulary or not has_idf:
+                raise ValueError(f"Vectorizer not properly fitted: vocabulary={has_vocabulary}, idf={has_idf}")
             
             self.loaded = True
         except FileNotFoundError as e:
@@ -112,18 +129,22 @@ class MLCategorizationService:
             # Transform and predict
             import numpy as np
             try:
-                # Check if vectorizer is actually fitted
-                if not hasattr(self.vectorizer, 'vocabulary_'):
-                    logger.error("Vectorizer not properly fitted - missing vocabulary_")
-                    return "Model Error", None, 0.0
+                # Detailed logging for debugging
+                logger.info(f"Has vocabulary_: {hasattr(self.vectorizer, 'vocabulary_')}")
+                logger.info(f"Has idf_: {hasattr(self.vectorizer, 'idf_')}")
+                logger.info(f"Has _tfidf: {hasattr(self.vectorizer, '_tfidf')}")
+                
+                if hasattr(self.vectorizer, 'vocabulary_'):
+                    logger.info(f"Vocabulary size: {len(self.vectorizer.vocabulary_)}")
                 
                 features = self.vectorizer.transform([cleaned_text])
-                logger.info("Text transformation successful")
+                logger.info(f"Text transformation successful. Feature shape: {features.shape}")
             except Exception as transform_error:
                 logger.error(f"Transform failed: {transform_error}")
                 logger.error(f"Vectorizer type: {type(self.vectorizer)}")
-                logger.error(f"Has idf_: {hasattr(self.vectorizer, 'idf_')}")
-                logger.error(f"Has vocabulary_: {hasattr(self.vectorizer, 'vocabulary_')}")
+                logger.error(f"Vectorizer __dict__ keys: {list(self.vectorizer.__dict__.keys())}")
+                import traceback
+                logger.error(f"Full traceback: {traceback.format_exc()}")
                 return "Model Error", None, 0.0
             
             prediction_id = self.model.predict(features)[0]
