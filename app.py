@@ -116,7 +116,12 @@ if ml_service.is_loaded():
 else:
     st.sidebar.error("❌ ML Models Not Loaded")
     if ml_service.load_error:
-        st.sidebar.caption(f"Error: {ml_service.load_error}")
+        with st.sidebar.expander("Error Details", expanded=False):
+            st.caption(f"{ml_service.load_error}")
+            if st.button("🔄 Clear Cache & Reload", key="clear_cache"):
+                st.cache_data.clear()
+                st.cache_resource.clear()
+                st.rerun()
 
 if spacy_loaded:
     st.sidebar.success("✅ spaCy NER Loaded")
